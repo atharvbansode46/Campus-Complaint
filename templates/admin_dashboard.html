@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | Campus Complaint System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar">
+
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+
+    <div class="navbar-user">
+
+        <span>
+            Admin: {{ session.get('user_name') }}
+        </span>
+
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================================================
+     MAIN CONTAINER
+========================================================= -->
+
+<div class="dashboard-container">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h1>Admin Dashboard</h1>
+
+            <p>
+                Monitor, assign and resolve campus complaints.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FLASH MESSAGES
+    ====================================================== -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- =====================================================
+         STATISTICS
+    ====================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <h3>Total Complaints</h3>
+
+            <div class="stat-number">
+                {{ total }}
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>New</h3>
+
+            <div class="stat-number">
+                {{ new_count }}
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>In Progress</h3>
+
+            <div class="stat-number">
+                {{ in_progress }}
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>Resolved</h3>
+
+            <div class="stat-number">
+                {{ resolved }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         COMPLAINTS
+    ====================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <h2>All Complaints</h2>
+
+                <p>
+                    Review and manage submitted complaints.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% if complaints %}
+
+            <div class="admin-complaints">
+
+                {% for complaint in complaints %}
+
+                    <div class="admin-complaint-card">
+
+
+                        <!-- =================================================
+                             COMPLAINT HEADER
+                        ================================================== -->
+
+                        <div class="complaint-card-header">
+
+                            <div>
+
+                                <span class="complaint-id">
+                                    #{{ complaint['id'] }}
+                                </span>
+
+                                <h3>
+                                    {{ complaint['title'] }}
+                                </h3>
+
+                            </div>
+
+
+                            <span class="status
+                                status-{{ complaint['status']
+                                | lower
+                                | replace(' ', '-') }}">
+
+                                {{ complaint['status'] }}
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             COMPLAINT DETAILS
+                        ================================================== -->
+
+                        <div class="admin-complaint-info">
+
+                            <p>
+                                <strong>Student:</strong>
+                                {{ complaint['student_name'] }}
+                            </p>
+
+                            <p>
+                                <strong>Student ID:</strong>
+                                {{ complaint['student_number'] }}
+                            </p>
+
+                            <p>
+                                <strong>Category:</strong>
+                                {{ complaint['category'] }}
+                            </p>
+
+                            <p>
+                                <strong>Department:</strong>
+
+                                {{ complaint['department_name']
+                                   or 'Not Assigned' }}
+
+                            </p>
+
+                            <p>
+                                <strong>Priority:</strong>
+                                {{ complaint['priority'] }}
+                            </p>
+
+                            <p>
+                                <strong>Location:</strong>
+
+                                {{ complaint['location']
+                                   or 'Not Provided' }}
+
+                            </p>
+
+                            <p>
+                                <strong>Community Support:</strong>
+
+                                {{ complaint['support_count'] }}
+
+                            </p>
+
+                            <p>
+                                <strong>Submitted:</strong>
+                                {{ complaint['created_at'] }}
+                            </p>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             DESCRIPTION
+                        ================================================== -->
+
+                        <div class="admin-description">
+
+                            <strong>Description</strong>
+
+                            <p>
+                                {{ complaint['description'] }}
+                            </p>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             CURRENT ASSIGNMENT
+                        ================================================== -->
+
+                        <div class="assignment-info">
+
+                            <strong>Currently Assigned To:</strong>
+
+                            {{ complaint['assigned_admin']
+                               or 'Not Assigned' }}
+
+                        </div>
+
+
+                        <!-- =================================================
+                             UPDATE FORM
+                        ================================================== -->
+
+                        <form
+                            action="{{ url_for(
+                                'update_complaint',
+                                complaint_id=complaint['id']
+                            ) }}"
+                            method="POST"
+                            class="admin-update-form">
+
+
+                            <div class="form-row">
+
+
+                                <!-- STATUS -->
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Update Status
+                                    </label>
+
+                                    <select name="status">
+
+                                        <option
+                                            value="New"
+                                            {% if complaint['status'] == 'New' %}
+                                            selected
+                                            {% endif %}>
+                                            New
+                                        </option>
+
+                                        <option
+                                            value="Verified"
+                                            {% if complaint['status'] == 'Verified' %}
+                                            selected
+                                            {% endif %}>
+                                            Verified
+                                        </option>
+
+                                        <option
+                                            value="Assigned"
+                                            {% if complaint['status'] == 'Assigned' %}
+                                            selected
+                                            {% endif %}>
+                                            Assigned
+                                        </option>
+
+                                        <option
+                                            value="In Progress"
+                                            {% if complaint['status'] == 'In Progress' %}
+                                            selected
+                                            {% endif %}>
+                                            In Progress
+                                        </option>
+
+                                        <option
+                                            value="Resolved"
+                                            {% if complaint['status'] == 'Resolved' %}
+                                            selected
+                                            {% endif %}>
+                                            Resolved
+                                        </option>
+
+                                        <option
+                                            value="Closed"
+                                            {% if complaint['status'] == 'Closed' %}
+                                            selected
+                                            {% endif %}>
+                                            Closed
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+
+                                <!-- ASSIGN ADMIN -->
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Assign To
+                                    </label>
+
+                                    <select name="assigned_to">
+
+                                        <option value="">
+                                            Not Assigned
+                                        </option>
+
+                                        {% for admin in admins %}
+
+                                            <option
+                                                value="{{ admin['id'] }}"
+
+                                                {% if complaint['assigned_to']
+                                                   == admin['id'] %}
+                                                selected
+                                                {% endif %}>
+
+                                                {{ admin['name'] }}
+
+                                            </option>
+
+                                        {% endfor %}
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 RESOLUTION
+                            ================================================== -->
+
+                            <div class="form-group">
+
+                                <label>
+                                    Resolution / Admin Note
+                                </label>
+
+                                <textarea
+                                    name="resolution"
+                                    rows="3"
+                                    placeholder="Add resolution or internal note...">{{ complaint['resolution'] or '' }}</textarea>
+
+                            </div>
+
+
+                            <!-- =================================================
+                                 BUTTONS
+                            ================================================== -->
+
+                            <div class="admin-action-buttons">
+
+                                <button
+                                    type="submit"
+                                    class="primary-btn">
+
+                                    Update Complaint
+
+                                </button>
+
+
+                                <a
+                                    href="{{ url_for(
+                                        'complaint_details',
+                                        complaint_id=complaint['id']
+                                    ) }}"
+                                    class="secondary-btn">
+
+                                    View Full Details
+
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <h3>No Complaints</h3>
+
+                <p>
+                    There are currently no complaints
+                    submitted by students.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

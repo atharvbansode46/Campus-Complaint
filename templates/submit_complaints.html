@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Submit Complaint | Campus Complaint System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar">
+
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+
+    <div class="navbar-user">
+
+        <span>
+            {{ session.get('user_name') }}
+        </span>
+
+        <a href="{{ url_for('student_dashboard') }}"
+           class="secondary-btn">
+            Dashboard
+        </a>
+
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================================================
+     MAIN CONTAINER
+========================================================= -->
+
+<div class="form-page-container">
+
+    <div class="form-card">
+
+        <!-- Header -->
+
+        <div class="form-header">
+
+            <h1>Submit a Complaint</h1>
+
+            <p>
+                Report an issue on campus so the concerned
+                department can take action.
+            </p>
+
+        </div>
+
+
+        <!-- Flash Messages -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- =================================================
+             COMPLAINT FORM
+        ================================================== -->
+
+        <form
+            action="{{ url_for('submit_complaint') }}"
+            method="POST"
+            id="complaintForm">
+
+
+            <!-- =================================================
+                 TITLE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="title">
+                    Complaint Title
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    placeholder="Example: Wi-Fi not working in classroom"
+                    maxlength="150"
+                    required>
+
+                <small>
+                    Keep the title short and specific.
+                </small>
+
+            </div>
+
+
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="description">
+                    Complaint Description
+                    <span class="required">*</span>
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="7"
+                    maxlength="1000"
+                    placeholder="Describe the issue in detail..."
+                    required></textarea>
+
+                <div class="character-count">
+
+                    <span id="charCount">
+                        0
+                    </span>
+
+                    / 1000 characters
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 CATEGORY
+            ================================================== -->
+
+            <div class="form-row">
+
+                <div class="form-group">
+
+                    <label for="category">
+                        Category
+                        <span class="required">*</span>
+                    </label>
+
+                    <select
+                        id="category"
+                        name="category"
+                        required>
+
+                        <option value="">
+                            Select Category
+                        </option>
+
+                        <option value="Academic">
+                            Academic
+                        </option>
+
+                        <option value="Infrastructure">
+                            Infrastructure
+                        </option>
+
+                        <option value="IT / Wi-Fi">
+                            IT / Wi-Fi
+                        </option>
+
+                        <option value="Library">
+                            Library
+                        </option>
+
+                        <option value="Hostel">
+                            Hostel
+                        </option>
+
+                        <option value="Canteen">
+                            Canteen
+                        </option>
+
+                        <option value="Transport">
+                            Transport
+                        </option>
+
+                        <option value="Cleanliness">
+                            Cleanliness
+                        </option>
+
+                        <option value="Examination">
+                            Examination
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- =================================================
+                     DEPARTMENT
+                ================================================== -->
+
+                <div class="form-group">
+
+                    <label for="department_id">
+                        Concerned Department
+                    </label>
+
+                    <select
+                        id="department_id"
+                        name="department_id">
+
+                        <option value="">
+                            Select Department
+                        </option>
+
+                        {% for department in departments %}
+
+                            <option value="{{ department['id'] }}">
+
+                                {{ department['name'] }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 LOCATION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="location">
+                    Location
+                </label>
+
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    placeholder="Example: Building A, Room 204">
+
+            </div>
+
+
+            <!-- =================================================
+                 PRIORITY
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="priority">
+                    Priority
+                </label>
+
+                <select
+                    id="priority"
+                    name="priority">
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                    <option value="Medium" selected>
+                        Medium
+                    </option>
+
+                    <option value="High">
+                        High
+                    </option>
+
+                    <option value="Critical">
+                        Critical
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 DUPLICATE COMPLAINT NOTICE
+            ================================================== -->
+
+            <div class="info-box">
+
+                <strong>Before submitting:</strong>
+
+                <p>
+                    Please check whether another student has
+                    already reported the same issue. Existing
+                    complaints can be supported instead of
+                    creating duplicate complaints.
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 TERMS
+            ================================================== -->
+
+            <div class="form-checkbox">
+
+                <input
+                    type="checkbox"
+                    id="confirmation"
+                    required>
+
+                <label for="confirmation">
+
+                    I confirm that the information provided
+                    is accurate to the best of my knowledge.
+
+                </label>
+
+            </div>
+
+
+            <!-- =================================================
+                 BUTTONS
+            ================================================== -->
+
+            <div class="form-actions">
+
+                <a
+                    href="{{ url_for('student_dashboard') }}"
+                    class="secondary-btn">
+
+                    Cancel
+
+                </a>
+
+                <button
+                    type="submit"
+                    class="primary-btn">
+
+                    Submit Complaint
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHARACTER COUNTER
+========================================================= -->
+
+<script>
+
+    const description =
+        document.getElementById("description");
+
+    const charCount =
+        document.getElementById("charCount");
+
+
+    description.addEventListener("input", function () {
+
+        charCount.textContent =
+            description.value.length;
+
+    });
+
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

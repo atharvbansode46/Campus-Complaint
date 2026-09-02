@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Complaint #{{ complaint['id'] }} |
+        Campus Complaint System
+    </title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar">
+
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+
+    <div class="navbar-user">
+
+        <span>
+            {{ session.get('user_name') }}
+        </span>
+
+        {% if session.get('user_type') == 'student' %}
+
+            <a href="{{ url_for('student_dashboard') }}"
+               class="secondary-btn">
+                Dashboard
+            </a>
+
+        {% elif session.get('user_type') == 'admin' %}
+
+            <a href="{{ url_for('admin_dashboard') }}"
+               class="secondary-btn">
+                Admin Dashboard
+            </a>
+
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================================================
+     MAIN CONTAINER
+========================================================= -->
+
+<div class="details-container">
+
+
+    <!-- =====================================================
+         FLASH MESSAGES
+    ====================================================== -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- =====================================================
+         COMPLAINT HEADER
+    ====================================================== -->
+
+    <div class="details-header">
+
+        <div>
+
+            <p class="complaint-number">
+                Complaint #{{ complaint['id'] }}
+            </p>
+
+            <h1>
+                {{ complaint['title'] }}
+            </h1>
+
+        </div>
+
+        <span class="status
+            status-{{ complaint['status']
+            | lower
+            | replace(' ', '-') }}">
+
+            {{ complaint['status'] }}
+
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         COMPLAINT INFORMATION
+    ====================================================== -->
+
+    <div class="details-grid">
+
+
+        <!-- =================================================
+             MAIN DETAILS
+        ================================================== -->
+
+        <div class="details-main">
+
+            <div class="details-card">
+
+                <h2>Complaint Description</h2>
+
+                <div class="description-box">
+
+                    {{ complaint['description'] }}
+
+                </div>
+
+
+                <!-- Category -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Category
+                    </span>
+
+                    <span class="detail-value">
+                        {{ complaint['category'] }}
+                    </span>
+
+                </div>
+
+
+                <!-- Department -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Department
+                    </span>
+
+                    <span class="detail-value">
+
+                        {{ complaint['department_name']
+                           or 'Not Assigned' }}
+
+                    </span>
+
+                </div>
+
+
+                <!-- Location -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Location
+                    </span>
+
+                    <span class="detail-value">
+
+                        {{ complaint['location']
+                           or 'Not Provided' }}
+
+                    </span>
+
+                </div>
+
+
+                <!-- Priority -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Priority
+                    </span>
+
+                    <span class="detail-value priority-{{ complaint['priority']|lower }}">
+
+                        {{ complaint['priority'] }}
+
+                    </span>
+
+                </div>
+
+
+                <!-- Submitted -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Submitted
+                    </span>
+
+                    <span class="detail-value">
+                        {{ complaint['created_at'] }}
+                    </span>
+
+                </div>
+
+
+                <!-- Updated -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Last Updated
+                    </span>
+
+                    <span class="detail-value">
+                        {{ complaint['updated_at'] }}
+                    </span>
+
+                </div>
+
+
+                <!-- Assigned Admin -->
+
+                <div class="detail-row">
+
+                    <span class="detail-label">
+                        Assigned To
+                    </span>
+
+                    <span class="detail-value">
+
+                        {{ complaint['assigned_admin']
+                           or 'Not Assigned' }}
+
+                    </span>
+
+                </div>
+
+
+                <!-- Resolution -->
+
+                {% if complaint['resolution'] %}
+
+                    <div class="resolution-box">
+
+                        <h3>Resolution</h3>
+
+                        <p>
+                            {{ complaint['resolution'] }}
+                        </p>
+
+                        {% if complaint['resolved_at'] %}
+
+                            <small>
+                                Resolved on:
+                                {{ complaint['resolved_at'] }}
+                            </small>
+
+                        {% endif %}
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- =================================================
+                 SUPPORT SYSTEM
+            ================================================== -->
+
+            <div class="details-card support-card">
+
+                <div>
+
+                    <h2>
+                        Community Support
+                    </h2>
+
+                    <p>
+                        {{ support_count }}
+                        student(s) support this complaint.
+                    </p>
+
+                </div>
+
+
+                {% if session.get('user_type') == 'student' %}
+
+                    {% if complaint['student_id'] != session['user_id'] %}
+
+                        <form
+                            action="{{ url_for(
+                                'support_complaint',
+                                complaint_id=complaint['id']
+                            ) }}"
+                            method="POST">
+
+                            <button
+                                type="submit"
+                                class="support-btn">
+
+                                {% if user_supported %}
+
+                                    ✓ Supported
+
+                                {% else %}
+
+                                    Support This Complaint
+
+                                {% endif %}
+
+                            </button>
+
+                        </form>
+
+                    {% else %}
+
+                        <p class="own-complaint-note">
+                            This is your complaint.
+                        </p>
+
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             SIDE PANEL
+        ================================================== -->
+
+        <div class="details-sidebar">
+
+
+            <!-- =================================================
+                 STUDENT INFORMATION
+            ================================================== -->
+
+            {% if session.get('user_type') == 'admin' %}
+
+                <div class="details-card">
+
+                    <h2>Student Information</h2>
+
+                    <div class="student-info">
+
+                        <p>
+                            <strong>Name:</strong>
+
+                            {{ complaint['student_name'] }}
+
+                        </p>
+
+                        <p>
+                            <strong>Student ID:</strong>
+
+                            {{ complaint['student_number'] }}
+
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>
+
+                            {{ complaint['student_email'] }}
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- =================================================
+                 STATUS TIMELINE
+            ================================================== -->
+
+            <div class="details-card">
+
+                <h2>Status Timeline</h2>
+
+                {% if history %}
+
+                    <div class="timeline">
+
+                        {% for item in history %}
+
+                            <div class="timeline-item">
+
+                                <div class="timeline-dot"></div>
+
+                                <div class="timeline-content">
+
+                                    <h3>
+                                        {{ item['new_status'] }}
+                                    </h3>
+
+                                    <p>
+
+                                        {% if item['old_status'] %}
+
+                                            Changed from
+                                            <strong>
+                                                {{ item['old_status'] }}
+                                            </strong>
+
+                                            to
+
+                                        {% endif %}
+
+                                        <strong>
+                                            {{ item['new_status'] }}
+                                        </strong>
+
+                                    </p>
+
+
+                                    {% if item['note'] %}
+
+                                        <p class="timeline-note">
+                                            {{ item['note'] }}
+                                        </p>
+
+                                    {% endif %}
+
+
+                                    <small>
+
+                                        {{ item['changed_at'] }}
+
+                                        {% if item['admin_name'] %}
+
+                                            ·
+                                            {{ item['admin_name'] }}
+
+                                        {% endif %}
+
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% else %}
+
+                    <p class="empty-text">
+                        No status history available.
+                    </p>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- =================================================
+                 STATUS INFORMATION
+            ================================================== -->
+
+            <div class="details-card">
+
+                <h2>Complaint Workflow</h2>
+
+                <div class="workflow">
+
+                    <div class="workflow-step
+                        {% if complaint['status'] in
+                        ['New', 'Verified', 'Assigned',
+                         'In Progress', 'Resolved', 'Closed'] %}
+                        active
+                        {% endif %}">
+
+                        <span>1</span>
+                        <p>New</p>
+
+                    </div>
+
+
+                    <div class="workflow-step
+                        {% if complaint['status'] in
+                        ['Verified', 'Assigned',
+                         'In Progress', 'Resolved', 'Closed'] %}
+                        active
+                        {% endif %}">
+
+                        <span>2</span>
+                        <p>Verified</p>
+
+                    </div>
+
+
+                    <div class="workflow-step
+                        {% if complaint['status'] in
+                        ['Assigned', 'In Progress',
+                         'Resolved', 'Closed'] %}
+                        active
+                        {% endif %}">
+
+                        <span>3</span>
+                        <p>Assigned</p>
+
+                    </div>
+
+
+                    <div class="workflow-step
+                        {% if complaint['status'] in
+                        ['In Progress', 'Resolved', 'Closed'] %}
+                        active
+                        {% endif %}">
+
+                        <span>4</span>
+                        <p>In Progress</p>
+
+                    </div>
+
+
+                    <div class="workflow-step
+                        {% if complaint['status'] in
+                        ['Resolved', 'Closed'] %}
+                        active
+                        {% endif %}">
+
+                        <span>5</span>
+                        <p>Resolved</p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

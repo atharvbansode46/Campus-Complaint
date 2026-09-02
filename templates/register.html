@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Register | Campus Complaint System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-card">
+
+        <div class="login-header">
+            <h1>Student Registration</h1>
+            <p>Create your Campus Complaint account</p>
+        </div>
+
+        <!-- Flash Messages -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- Registration Form -->
+
+        <form action="{{ url_for('register') }}" method="POST">
+
+            <!-- Student ID -->
+
+            <div class="form-group">
+
+                <label for="student_id">
+                    Student ID / Roll Number
+                </label>
+
+                <input
+                    type="text"
+                    id="student_id"
+                    name="student_id"
+                    placeholder="Enter your roll number"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Full Name -->
+
+            <div class="form-group">
+
+                <label for="name">
+                    Full Name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Enter your full name"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Email -->
+
+            <div class="form-group">
+
+                <label for="email">
+                    College Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Password -->
+
+            <div class="form-group">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Create a password"
+                    minlength="6"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Department -->
+
+            <div class="form-group">
+
+                <label for="department">
+                    Department
+                </label>
+
+                <select
+                    id="department"
+                    name="department"
+                    required
+                >
+
+                    <option value="">
+                        Select Department
+                    </option>
+
+                    <option value="AIDS">
+                        AI & Data Science
+                    </option>
+
+                    <option value="CSE">
+                        Computer Science
+                    </option>
+
+                    <option value="ENTC">
+                        Electronics & Telecommunication
+                    </option>
+
+                    <option value="ME">
+                        Mechanical Engineering
+                    </option>
+
+                    <option value="Civil">
+                        Civil Engineering
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Year -->
+
+            <div class="form-group">
+
+                <label for="year">
+                    Year
+                </label>
+
+                <select
+                    id="year"
+                    name="year"
+                    required
+                >
+
+                    <option value="">
+                        Select Year
+                    </option>
+
+                    <option value="FY">
+                        First Year
+                    </option>
+
+                    <option value="SY">
+                        Second Year
+                    </option>
+
+                    <option value="TY">
+                        Third Year
+                    </option>
+
+                    <option value="Final Year">
+                        Final Year
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- Division -->
+
+            <div class="form-group">
+
+                <label for="division">
+                    Division
+                </label>
+
+                <input
+                    type="text"
+                    id="division"
+                    name="division"
+                    placeholder="Example: A"
+                    maxlength="5"
+                    required
+                >
+
+            </div>
+
+
+            <!-- Phone -->
+
+            <div class="form-group">
+
+                <label for="phone">
+                    Phone Number
+                </label>
+
+                <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="Enter phone number"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                >
+
+            </div>
+
+
+            <!-- Submit -->
+
+            <button
+                type="submit"
+                class="login-btn"
+            >
+                Create Account
+            </button>
+
+        </form>
+
+
+        <!-- Login Link -->
+
+        <div class="register-link">
+
+            <p>
+                Already have an account?
+
+                <a href="{{ url_for('login') }}">
+                    Login
+                </a>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

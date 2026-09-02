@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Campus Complaint System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <div class="login-card">
+
+            <div class="login-header">
+                <h1>Campus Complaint System</h1>
+                <p>Login to continue</p>
+            </div>
+
+
+            <!-- Flash Messages -->
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                    {% for category, message in messages %}
+
+                        <div class="alert {{ category }}">
+                            {{ message }}
+                        </div>
+
+                    {% endfor %}
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <!-- Login Form -->
+
+            <form action="{{ url_for('login') }}" method="POST">
+
+                <div class="form-group">
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="login-btn"
+                >
+                    Login
+                </button>
+
+            </form>
+
+
+            <div class="register-link">
+
+                <p>
+                    Don't have an account?
+                    <a href="{{ url_for('register') }}">
+                        Create Account
+                    </a>
+                </p>
+
+            </div>
+
+
+            <!-- Development Admin Information -->
+
+            <div class="admin-info">
+
+                <p><strong>Development Admin</strong></p>
+
+                <p>Email: admin@campus.com</p>
+
+                <p>Password: admin123</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

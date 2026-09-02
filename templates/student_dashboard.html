@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Dashboard | Campus Complaint System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<!-- =========================================================
+     NAVBAR
+========================================================= -->
+
+<nav class="navbar">
+
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+
+    <div class="navbar-user">
+
+        <span>
+            Welcome, {{ session.get('user_name') }}
+        </span>
+
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">
+            Logout
+        </a>
+
+    </div>
+
+</nav>
+
+
+<!-- =========================================================
+     MAIN CONTAINER
+========================================================= -->
+
+<div class="dashboard-container">
+
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="dashboard-header">
+
+        <div>
+
+            <h1>Student Dashboard</h1>
+
+            <p>
+                Manage and track your campus complaints.
+            </p>
+
+        </div>
+
+        <a href="{{ url_for('submit_complaint') }}"
+           class="primary-btn">
+
+            + Submit Complaint
+
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         FLASH MESSAGES
+    ====================================================== -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- =====================================================
+         STATISTICS
+    ====================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <h3>Total Complaints</h3>
+
+            <div class="stat-number">
+                {{ total_complaints }}
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>Pending</h3>
+
+            <div class="stat-number">
+                {{ pending_complaints }}
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>Resolved</h3>
+
+            <div class="stat-number">
+                {{ resolved_complaints }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         NOTIFICATIONS
+    ====================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <h2>Notifications</h2>
+
+            {% if notifications %}
+
+                <form
+                    action="{{ url_for('mark_notifications_read') }}"
+                    method="POST">
+
+                    <button
+                        type="submit"
+                        class="small-btn">
+
+                        Mark All as Read
+
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+
+        {% if notifications %}
+
+            <div class="notifications-list">
+
+                {% for notification in notifications %}
+
+                    <div class="notification
+                        {% if not notification['is_read'] %}
+                            unread
+                        {% endif %}">
+
+                        <p>
+                            {{ notification['message'] }}
+                        </p>
+
+                        <small>
+                            {{ notification['created_at'] }}
+                        </small>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <p>
+                    No notifications yet.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =====================================================
+         MY COMPLAINTS
+    ====================================================== -->
+
+    <div class="dashboard-section">
+
+        <div class="section-header">
+
+            <h2>My Complaints</h2>
+
+        </div>
+
+
+        {% if complaints %}
+
+            <div class="complaints-grid">
+
+                {% for complaint in complaints %}
+
+                    <div class="complaint-card">
+
+
+                        <!-- Complaint Header -->
+
+                        <div class="complaint-card-header">
+
+                            <span class="complaint-id">
+                                #{{ complaint['id'] }}
+                            </span>
+
+                            <span class="status
+                                status-{{ complaint['status']
+                                | lower
+                                | replace(' ', '-') }}">
+
+                                {{ complaint['status'] }}
+
+                            </span>
+
+                        </div>
+
+
+                        <!-- Title -->
+
+                        <h3>
+                            {{ complaint['title'] }}
+                        </h3>
+
+
+                        <!-- Description -->
+
+                        <p class="complaint-description">
+
+                            {{ complaint['description']
+                               [:150] }}
+
+                            {% if complaint['description']|length > 150 %}
+                                ...
+                            {% endif %}
+
+                        </p>
+
+
+                        <!-- Information -->
+
+                        <div class="complaint-info">
+
+                            <p>
+                                <strong>Category:</strong>
+                                {{ complaint['category'] }}
+                            </p>
+
+                            <p>
+                                <strong>Department:</strong>
+
+                                {{ complaint['department_name']
+                                   or 'Not Assigned' }}
+
+                            </p>
+
+                            <p>
+                                <strong>Priority:</strong>
+                                {{ complaint['priority'] }}
+                            </p>
+
+                            <p>
+                                <strong>Support:</strong>
+
+                                {{ complaint['support_count'] }}
+
+                                student(s)
+
+                            </p>
+
+                            <p>
+                                <strong>Submitted:</strong>
+
+                                {{ complaint['created_at'] }}
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- View Button -->
+
+                        <a
+                            href="{{ url_for(
+                                'complaint_details',
+                                complaint_id=complaint['id']
+                            ) }}"
+                            class="secondary-btn">
+
+                            View Details
+
+                        </a>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-state">
+
+                <h3>No complaints yet</h3>
+
+                <p>
+                    You haven't submitted any complaint.
+                </p>
+
+                <a
+                    href="{{ url_for('submit_complaint') }}"
+                    class="primary-btn">
+
+                    Submit Your First Complaint
+
+                </a>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
