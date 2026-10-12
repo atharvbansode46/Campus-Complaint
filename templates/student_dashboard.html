@@ -97,9 +97,9 @@
          STATISTICS
     ====================================================== -->
 
-    <div class="stats-grid">
+    <div class="stats-grid complaint-filters" data-filter-target=".complaint-card">
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button active" data-filter="all">
 
             <h3>Total Complaints</h3>
 
@@ -107,10 +107,10 @@
                 {{ total_complaints }}
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button" data-filter="pending">
 
             <h3>Pending</h3>
 
@@ -118,10 +118,10 @@
                 {{ pending_complaints }}
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button" data-filter="resolved">
 
             <h3>Resolved</h3>
 
@@ -129,7 +129,7 @@
                 {{ resolved_complaints }}
             </div>
 
-        </div>
+        </button>
 
     </div>
 
@@ -224,7 +224,8 @@
 
                 {% for complaint in complaints %}
 
-                    <div class="complaint-card">
+                    <div class="complaint-card complaint-item"
+                         data-status="{{ complaint['status'] }}">
 
 
                         <!-- Complaint Header -->
@@ -253,6 +254,13 @@
                             {{ complaint['title'] }}
                         </h3>
 
+
+                        <button type="button" class="complaint-toggle"
+                                aria-expanded="false">
+                            View complaint details
+                        </button>
+
+                        <div class="complaint-extra" hidden>
 
                         <!-- Description -->
 
@@ -321,6 +329,8 @@
                             View Details
 
                         </a>
+
+                        </div>
 
                     </div>
 

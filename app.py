@@ -5,12 +5,14 @@ from flask import (
     redirect,
     url_for,
     session,
-    flash
+    flash,
+    jsonify
 )
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database import get_db_connection, init_db
+from ai_service import ask_gemini
 
 
 # ============================================================
@@ -794,6 +796,94 @@ def support_complaint(complaint_id):
 # ADMIN DASHBOARD
 # ============================================================
 
+def get_admin_analytics(conn):
+
+    def grouped_counts(query):
+        return [
+            {"label": row["label"], "count": row["count"]}
+            for row in conn.execute(query).fetchall()
+        ]
+
+    total = conn.execute(
+        "SELECT COUNT(*) FROM complaints"
+    ).fetchone()[0]
+
+    average_support = conn.execute(
+        """
+        SELECT COALESCE(AVG(support_count), 0)
+        FROM (
+            SELECT c.id, COUNT(cs.id) AS support_count
+            FROM complaints c
+            LEFT JOIN complaint_support cs
+                ON cs.complaint_id = c.id
+            GROUP BY c.id
+        )
+        """
+    ).fetchone()[0]
+
+    resolved_total = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM complaints
+        WHERE status IN ('Resolved', 'Closed')
+        """
+    ).fetchone()[0]
+
+    return {
+        "total": total,
+        "resolved_total": resolved_total,
+        "resolution_rate": (
+            round((resolved_total / total) * 100, 1)
+            if total
+            else 0
+        ),
+        "average_support": round(average_support, 1),
+        "status": grouped_counts(
+            """
+            SELECT status AS label, COUNT(*) AS count
+            FROM complaints
+            GROUP BY status
+            ORDER BY count DESC, label
+            """
+        ),
+        "category": grouped_counts(
+            """
+            SELECT category AS label, COUNT(*) AS count
+            FROM complaints
+            GROUP BY category
+            ORDER BY count DESC, label
+            """
+        ),
+        "department": grouped_counts(
+            """
+            SELECT COALESCE(d.name, 'Unassigned') AS label,
+                   COUNT(*) AS count
+            FROM complaints c
+            LEFT JOIN departments d
+                ON c.department_id = d.id
+            GROUP BY COALESCE(d.name, 'Unassigned')
+            ORDER BY count DESC, label
+            """
+        ),
+        "priority": grouped_counts(
+            """
+            SELECT priority AS label, COUNT(*) AS count
+            FROM complaints
+            GROUP BY priority
+            ORDER BY count DESC, label
+            """
+        ),
+        "monthly": grouped_counts(
+            """
+            SELECT substr(created_at, 1, 7) AS label, COUNT(*) AS count
+            FROM complaints
+            GROUP BY substr(created_at, 1, 7)
+            ORDER BY label
+            """
+        )
+    }
+
+
 @app.route("/admin")
 def admin_dashboard():
 
@@ -874,9 +964,11 @@ def admin_dashboard():
         """
         SELECT COUNT(*)
         FROM complaints
-        WHERE status = 'Resolved'
+        WHERE status IN ('Resolved', 'Closed')
         """
     ).fetchone()[0]
+
+    pending = total - resolved
 
     conn.close()
 
@@ -887,8 +979,105 @@ def admin_dashboard():
         total=total,
         new_count=new_count,
         in_progress=in_progress,
-        resolved=resolved
+        resolved=resolved,
+        pending=pending
     )
+
+
+@app.route("/admin/analytics")
+def admin_analytics():
+
+    if session.get("user_type") != "admin":
+
+        return jsonify({"error": "Admin authentication required."}), 401
+
+    conn = get_db_connection()
+
+    try:
+        return jsonify(get_admin_analytics(conn))
+    finally:
+        conn.close()
+
+
+@app.route("/admin/ai-summary", methods=["POST"])
+def admin_ai_summary():
+
+    if session.get("user_type") != "admin":
+
+        return jsonify({"error": "Admin authentication required."}), 401
+
+    conn = get_db_connection()
+
+    try:
+        complaints = conn.execute(
+            """
+            SELECT
+                c.title,
+                c.description,
+                c.category,
+                COALESCE(d.name, 'Unassigned') AS department,
+                c.priority,
+                c.status
+            FROM complaints c
+            LEFT JOIN departments d
+                ON c.department_id = d.id
+            ORDER BY c.created_at DESC
+            """
+        ).fetchall()
+
+        analytics = get_admin_analytics(conn)
+    finally:
+        conn.close()
+
+    complaint_data = [
+        {
+            "title": complaint["title"],
+            "description": complaint["description"][:600],
+            "category": complaint["category"],
+            "department": complaint["department"],
+            "priority": complaint["priority"],
+            "status": complaint["status"]
+        }
+        for complaint in complaints
+    ]
+
+    prompt = f"""
+You are helping an authenticated campus administrator review complaint data.
+Use only the complaint records and verified aggregate statistics below.
+Do not invent counts, causes, or facts. Do not mention or infer student identities.
+
+Return ONLY a concise report of at most 120 words.
+Use exactly these headings and one short bullet per heading:
+Summary, Category trend, Progress trend, Priority action, Limitation.
+Mention only trends supported by the supplied data. Include counts or percentages
+from the verified aggregate statistics when useful. Do not repeat complaint text.
+Do not add greetings, long explanations, or extra headings.
+
+Verified aggregate statistics:
+{analytics}
+
+Complaint records (descriptions may be truncated):
+{complaint_data}
+"""
+
+    try:
+        response = ask_gemini(prompt)
+    except Exception:
+        return jsonify({
+            "error": "The AI service is temporarily unavailable."
+        }), 502
+
+    if response.startswith("AI service unavailable") or \
+            response.startswith("Gemini API key missing"):
+        return jsonify({
+            "error": response
+        }), 502
+
+    words = response.split()
+    if len(words) > 140:
+        response = " ".join(words[:140]) + "..."
+
+    return jsonify({"summary": response})
 
 
 # ============================================================

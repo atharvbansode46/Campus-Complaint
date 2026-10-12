@@ -90,9 +90,9 @@
          STATISTICS
     ====================================================== -->
 
-    <div class="stats-grid">
+    <div class="stats-grid complaint-filters" data-filter-target=".admin-complaint-card">
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button active" data-filter="all">
 
             <h3>Total Complaints</h3>
 
@@ -100,10 +100,10 @@
                 {{ total }}
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button" data-filter="New">
 
             <h3>New</h3>
 
@@ -111,21 +111,21 @@
                 {{ new_count }}
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button" data-filter="pending">
 
-            <h3>In Progress</h3>
+            <h3>Pending</h3>
 
             <div class="stat-number">
-                {{ in_progress }}
+                {{ pending }}
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="stat-card">
+        <button type="button" class="stat-card filter-button" data-filter="resolved">
 
             <h3>Resolved</h3>
 
@@ -133,6 +133,60 @@
                 {{ resolved }}
             </div>
 
+        </button>
+
+    </div>
+
+    <div class="dashboard-section analytics-section">
+
+        <div class="section-header">
+
+            <div>
+                <h2>AI Summary and Analytics</h2>
+                <p>
+                    Charts use live database aggregates. AI reports use complaint
+                    text and verified statistics without student identity data.
+                </p>
+            </div>
+
+            <div class="analytics-actions">
+                <button type="button" class="primary-btn" id="loadAiSummary">
+                    Generate AI Report
+                </button>
+                <button type="button" class="secondary-btn" id="refreshAnalytics">
+                    Refresh Analytics
+                </button>
+            </div>
+
+        </div>
+
+        <div id="analyticsMessage" class="analytics-message" role="status"></div>
+
+        <div id="aiSummary" class="ai-summary" hidden></div>
+
+        <div class="analytics-metrics" id="analyticsMetrics"></div>
+
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <h3>Complaint Status</h3>
+                <div class="bar-chart" id="statusChart"></div>
+            </div>
+            <div class="analytics-card">
+                <h3>Categories</h3>
+                <div class="bar-chart" id="categoryChart"></div>
+            </div>
+            <div class="analytics-card">
+                <h3>Departments</h3>
+                <div class="bar-chart" id="departmentChart"></div>
+            </div>
+            <div class="analytics-card">
+                <h3>Priority</h3>
+                <div class="bar-chart" id="priorityChart"></div>
+            </div>
+            <div class="analytics-card analytics-card-wide">
+                <h3>Complaints by Month</h3>
+                <div class="bar-chart" id="monthlyChart"></div>
+            </div>
         </div>
 
     </div>
@@ -165,7 +219,8 @@
 
                 {% for complaint in complaints %}
 
-                    <div class="admin-complaint-card">
+                    <div class="admin-complaint-card complaint-item"
+                         data-status="{{ complaint['status'] }}">
 
 
                         <!-- =================================================
@@ -198,6 +253,13 @@
 
                         </div>
 
+
+                        <button type="button" class="complaint-toggle"
+                                aria-expanded="false">
+                            View complaint details
+                        </button>
+
+                        <div class="complaint-extra" hidden>
 
                         <!-- =================================================
                              COMPLAINT DETAILS
@@ -448,6 +510,8 @@
                             </div>
 
                         </form>
+
+                        </div>
 
                     </div>
 

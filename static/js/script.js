@@ -395,6 +395,212 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+    /* =====================================================
+       DASHBOARD COMPLAINT FILTERS AND COLLAPSIBLE DETAILS
+    ====================================================== */
+
+    document.querySelectorAll(".complaint-filters").forEach(function (filterBar) {
+        const cards = document.querySelectorAll(
+            filterBar.dataset.filterTarget + ".complaint-item"
+        );
+        const buttons = filterBar.querySelectorAll(".filter-button");
+
+        buttons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                const selected = button.dataset.filter;
+
+                buttons.forEach(function (item) {
+                    item.classList.toggle("active", item === button);
+                });
+
+                cards.forEach(function (card) {
+                    const status = card.dataset.status;
+                    const isResolved =
+                        status === "Resolved" || status === "Closed";
+                    const visible =
+                        selected === "all" ||
+                        status === selected ||
+                        (selected === "pending" && !isResolved) ||
+                        (selected === "resolved" && isResolved);
+
+                    card.hidden = !visible;
+                });
+            });
+        });
+    });
+
+    document.querySelectorAll(".complaint-toggle").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const details = button.nextElementSibling;
+            const isHidden = details.hidden;
+
+            details.hidden = !isHidden;
+            button.setAttribute("aria-expanded", String(isHidden));
+            button.textContent = isHidden
+                ? "Hide complaint details"
+                : "View complaint details";
+        });
+    });
+
+    /* =====================================================
+       ADMIN ANALYTICS AND AI REPORT
+    ====================================================== */
+
+    const analyticsMessage =
+        document.getElementById("analyticsMessage");
+
+    function showAnalyticsMessage(message, isError) {
+        if (!analyticsMessage) {
+            return;
+        }
+
+        analyticsMessage.textContent = message;
+        analyticsMessage.className =
+            isError ? "analytics-message error" : "analytics-message";
+    }
+
+    function renderBarChart(elementId, items) {
+        const chart = document.getElementById(elementId);
+
+        if (!chart) {
+            return;
+        }
+
+        chart.innerHTML = "";
+
+        if (!items || items.length === 0) {
+            chart.textContent = "No complaint data available.";
+            return;
+        }
+
+        const maximum = Math.max.apply(
+            null,
+            items.map(function (item) {
+                return item.count;
+            })
+        );
+
+        items.forEach(function (item) {
+            const row = document.createElement("div");
+            row.className = "bar-row";
+
+            const label = document.createElement("span");
+            label.className = "bar-label";
+            label.textContent = item.label;
+
+            const track = document.createElement("div");
+            track.className = "bar-track";
+
+            const fill = document.createElement("div");
+            fill.className = "bar-fill";
+            fill.style.width =
+                Math.max((item.count / maximum) * 100, 3) + "%";
+
+            const value = document.createElement("span");
+            value.className = "bar-value";
+            value.textContent = item.count;
+
+            track.appendChild(fill);
+            row.appendChild(label);
+            row.appendChild(track);
+            row.appendChild(value);
+            chart.appendChild(row);
+        });
+    }
+
+    function renderAnalytics(data) {
+        const metrics = document.getElementById("analyticsMetrics");
+
+        if (metrics) {
+            metrics.innerHTML =
+                "<div><strong>" + data.total +
+                "</strong><span>Total records</span></div>" +
+                "<div><strong>" + data.resolved_total +
+                "</strong><span>Resolved or closed</span></div>" +
+                "<div><strong>" + data.resolution_rate +
+                "%</strong><span>Resolution rate</span></div>" +
+                "<div><strong>" + data.average_support +
+                "</strong><span>Average support</span></div>";
+        }
+
+        renderBarChart("statusChart", data.status);
+        renderBarChart("categoryChart", data.category);
+        renderBarChart("departmentChart", data.department);
+        renderBarChart("priorityChart", data.priority);
+        renderBarChart("monthlyChart", data.monthly);
+    }
+
+    function loadAnalytics() {
+        showAnalyticsMessage("Loading verified analytics...", false);
+
+        fetch("/admin/analytics")
+            .then(function (response) {
+                return response.json().then(function (data) {
+                    if (!response.ok) {
+                        throw new Error(data.error || "Unable to load analytics.");
+                    }
+                    return data;
+                });
+            })
+            .then(function (data) {
+                renderAnalytics(data);
+                showAnalyticsMessage("Analytics updated from the database.", false);
+            })
+            .catch(function (error) {
+                showAnalyticsMessage(error.message, true);
+            });
+    }
+
+    const refreshAnalytics =
+        document.getElementById("refreshAnalytics");
+
+    if (refreshAnalytics) {
+        refreshAnalytics.addEventListener("click", loadAnalytics);
+        loadAnalytics();
+    }
+
+    const loadAiSummary =
+        document.getElementById("loadAiSummary");
+
+    if (loadAiSummary) {
+        loadAiSummary.addEventListener("click", function () {
+            const summary = document.getElementById("aiSummary");
+
+            loadAiSummary.disabled = true;
+            loadAiSummary.textContent = "Generating...";
+            showAnalyticsMessage("Sending minimized complaint data to Gemini...", false);
+
+            fetch("/admin/ai-summary", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+                .then(function (response) {
+                    return response.json().then(function (data) {
+                        if (!response.ok) {
+                            throw new Error(
+                                data.error || "Unable to generate the AI report."
+                            );
+                        }
+                        return data;
+                    });
+                })
+                .then(function (data) {
+                    summary.textContent = data.summary;
+                    summary.hidden = false;
+                    showAnalyticsMessage("AI report generated.", false);
+                })
+                .catch(function (error) {
+                    showAnalyticsMessage(error.message, true);
+                })
+                .finally(function () {
+                    loadAiSummary.disabled = false;
+                    loadAiSummary.textContent = "Generate AI Report";
+                });
+        });
+    }
+
 
     /* =====================================================
        PREVENT DOUBLE FORM SUBMISSION
