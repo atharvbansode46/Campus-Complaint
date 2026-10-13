@@ -90,9 +90,10 @@
          STATISTICS
     ====================================================== -->
 
-    <div class="stats-grid complaint-filters" data-filter-target=".admin-complaint-card">
+    <div class="stats-grid">
 
-        <button type="button" class="stat-card filter-button active" data-filter="all">
+        <a href="{{ url_for('admin_dashboard', status_filter='all') }}"
+           class="stat-card">
 
             <h3>Total Complaints</h3>
 
@@ -100,10 +101,10 @@
                 {{ total }}
             </div>
 
-        </button>
+        </a>
 
-
-        <button type="button" class="stat-card filter-button" data-filter="New">
+        <a href="{{ url_for('admin_dashboard', status_filter='new') }}"
+           class="stat-card">
 
             <h3>New</h3>
 
@@ -111,10 +112,10 @@
                 {{ new_count }}
             </div>
 
-        </button>
+        </a>
 
-
-        <button type="button" class="stat-card filter-button" data-filter="pending">
+        <a href="{{ url_for('admin_dashboard', status_filter='pending') }}"
+           class="stat-card">
 
             <h3>Pending</h3>
 
@@ -122,10 +123,21 @@
                 {{ pending }}
             </div>
 
-        </button>
+        </a>
 
+        <a href="{{ url_for('admin_dashboard', status_filter='in-progress') }}"
+           class="stat-card">
 
-        <button type="button" class="stat-card filter-button" data-filter="resolved">
+            <h3>In Progress</h3>
+
+            <div class="stat-number">
+                {{ in_progress }}
+            </div>
+
+        </a>
+
+        <a href="{{ url_for('admin_dashboard', status_filter='resolved') }}"
+           class="stat-card">
 
             <h3>Resolved</h3>
 
@@ -133,7 +145,18 @@
                 {{ resolved }}
             </div>
 
-        </button>
+        </a>
+
+        <a href="{{ url_for('admin_dashboard', status_filter='rejected') }}"
+           class="stat-card">
+
+            <h3>Rejected</h3>
+
+            <div class="stat-number">
+                {{ rejected }}
+            </div>
+
+        </a>
 
     </div>
 
@@ -192,6 +215,8 @@
     </div>
 
 
+    {% if request.path != '/admin' %}
+
     <!-- =====================================================
          COMPLAINTS
     ====================================================== -->
@@ -202,13 +227,29 @@
 
             <div>
 
-                <h2>All Complaints</h2>
+                <h2>
+                    {% if request.path.endswith('/new') %}
+                        New Complaints
+                    {% elif request.path.endswith('/pending') %}
+                        Pending Complaints
+                    {% elif request.path.endswith('/in-progress') %}
+                        In Progress Complaints
+                    {% elif request.path.endswith('/resolved') %}
+                        Resolved Complaints
+                    {% elif request.path.endswith('/rejected') %}
+                        Rejected Complaints
+                    {% else %}
+                        All Complaints
+                    {% endif %}
+                </h2>
 
                 <p>
                     Review and manage submitted complaints.
                 </p>
 
             </div>
+
+            {% endif %}
 
         </div>
 
@@ -419,6 +460,14 @@
                                             selected
                                             {% endif %}>
                                             Closed
+                                        </option>
+
+                                        <option
+                                            value="Rejected"
+                                            {% if complaint['status'] == 'Rejected' %}
+                                            selected
+                                            {% endif %}>
+                                            Rejected
                                         </option>
 
                                     </select>

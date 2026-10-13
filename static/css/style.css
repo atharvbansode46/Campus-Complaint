@@ -453,6 +453,8 @@ select {
     box-shadow:
         0 5px 18px rgba(0, 0, 0, 0.04);
     cursor: pointer;
+    color: inherit;
+    text-decoration: none;
     transition: 0.2s;
 }
 
@@ -477,6 +479,17 @@ select {
     font-weight: 700;
 
     color: #2563eb;
+}
+
+.community-stat-card {
+    display: block;
+}
+
+.stat-card-hint {
+    display: block;
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 12px;
 }
 
 .analytics-actions {
@@ -802,6 +815,11 @@ select {
     color: #374151;
 }
 
+.status-rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 
 /* =========================================================
    NOTIFICATIONS
@@ -847,6 +865,75 @@ select {
     font-size: 11px;
 }
 
+.community-complaints-bar {
+    border-top: 4px solid #2563eb;
+}
+
+.community-complaints-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.community-complaint-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #1d4ed8;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.community-complaint-item:hover,
+.community-complaint-item:focus-visible {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    outline: none;
+}
+
+.community-complaint-title {
+    overflow: hidden;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.community-page-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 18px;
+}
+
+.community-page-item {
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.community-page-item h2 {
+    margin-top: 8px;
+    color: #111827;
+    font-size: 18px;
+}
+
+.community-page-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 14px 0;
+    color: #6b7280;
+    font-size: 13px;
+}
 
 /* =========================================================
    EMPTY STATE

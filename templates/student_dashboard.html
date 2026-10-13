@@ -131,6 +131,32 @@
 
         </button>
 
+        <a href="{{ url_for('community_complaints') }}"
+           class="stat-card community-stat-card">
+
+            <h3>Community Complaints</h3>
+
+            <div class="stat-number">
+                {{ community_complaints|length }}
+            </div>
+
+            <span class="stat-card-hint">View and support all</span>
+
+        </a>
+
+        <a href="{{ url_for('closed_complaints') }}"
+           class="stat-card community-stat-card">
+
+            <h3>Closed Complaints</h3>
+
+            <div class="stat-number">
+                {{ closed_complaints|length }}
+            </div>
+
+            <span class="stat-card-hint">View closed complaints</span>
+
+        </a>
+
     </div>
 
 

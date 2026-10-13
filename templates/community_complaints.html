@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Complaints | Campus Complaint System</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+
+    <div class="navbar-user">
+        <span>{{ session.get('user_name') }}</span>
+        <a href="{{ url_for('student_dashboard') }}"
+           class="secondary-btn">Dashboard</a>
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">Logout</a>
+    </div>
+</nav>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <h1>Community Complaints</h1>
+            <p>Open a complaint to review its details and support it.</p>
+        </div>
+        <a href="{{ url_for('submit_complaint') }}"
+           class="primary-btn">+ Submit Complaint</a>
+    </div>
+
+    <div class="dashboard-section">
+        {% if complaints %}
+            <div class="community-page-list">
+                {% for complaint in complaints %}
+                    <article class="community-page-item">
+                        <div class="complaint-card-header">
+                            <div>
+                                <span class="complaint-id">#{{ complaint['id'] }}</span>
+                                <h2>{{ complaint['title'] }}</h2>
+                            </div>
+                            <span class="status status-{{ complaint['status']|lower|replace(' ', '-') }}">
+                                {{ complaint['status'] }}
+                            </span>
+                        </div>
+
+                        <p class="complaint-description">
+                            {{ complaint['description'][:180] }}
+                            {% if complaint['description']|length > 180 %}...{% endif %}
+                        </p>
+
+                        <div class="community-page-meta">
+                            <span>{{ complaint['category'] }}</span>
+                            <span>{{ complaint['support_count'] }} support(s)</span>
+                        </div>
+
+                        <a href="{{ url_for('complaint_details', complaint_id=complaint['id']) }}"
+                           class="secondary-btn">View Details &amp; Support</a>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No complaints yet</h3>
+                <p>No community complaints have been submitted.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

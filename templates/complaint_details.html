@@ -306,7 +306,8 @@
 
                 {% if session.get('user_type') == 'student' %}
 
-                    {% if complaint['student_id'] != session['user_id'] %}
+                    {% if complaint['student_id'] != session['user_id']
+                          and complaint['status'] != 'Closed' %}
 
                         <form
                             action="{{ url_for(
@@ -333,10 +334,16 @@
 
                         </form>
 
-                    {% else %}
+                    {% elif complaint['student_id'] == session['user_id'] %}
 
                         <p class="own-complaint-note">
                             This is your complaint.
+                        </p>
+
+                    {% else %}
+
+                        <p class="own-complaint-note">
+                            This complaint is closed and cannot receive support.
                         </p>
 
                     {% endif %}

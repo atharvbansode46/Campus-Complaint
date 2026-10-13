@@ -32,6 +32,66 @@ app.secret_key = "campus_complaint_secret_key_change_later"
 init_db()
 
 
+def close_expired_resolved_complaints():
+    """Move complaints from Resolved to Closed after 24 hours."""
+    conn = get_db_connection()
+
+    try:
+        expired = conn.execute(
+            """
+            SELECT id
+            FROM complaints
+            WHERE status = 'Resolved'
+              AND resolved_at IS NOT NULL
+              AND datetime(resolved_at) <= datetime('now', '-24 hours')
+            """
+        ).fetchall()
+
+        if not expired:
+            return
+
+        conn.execute(
+            """
+            UPDATE complaints
+            SET status = 'Closed',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'Resolved'
+              AND resolved_at IS NOT NULL
+              AND datetime(resolved_at) <= datetime('now', '-24 hours')
+            """
+        )
+
+        conn.executemany(
+            """
+            INSERT INTO complaint_status_history
+            (
+                complaint_id,
+                old_status,
+                new_status,
+                changed_by,
+                note
+            )
+            VALUES (?, 'Resolved', 'Closed', NULL, ?)
+            """,
+            [
+                (
+                    complaint["id"],
+                    "Automatically closed 24 hours after resolution."
+                )
+                for complaint in expired
+            ]
+        )
+
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@app.before_request
+def automatically_close_expired_complaints():
+    close_expired_resolved_complaints()
+
+
 # ============================================================
 # HOME ROUTE
 # ============================================================
@@ -313,6 +373,26 @@ def student_dashboard():
         (student_id,)
     ).fetchall()
 
+    # Show every complaint title so students can open and support
+    # complaints submitted by other students.
+    community_complaints = conn.execute(
+        """
+        SELECT id, title, status, created_at
+        FROM complaints
+        WHERE status != 'Closed'
+        ORDER BY created_at DESC
+        """
+    ).fetchall()
+
+    closed_complaints = conn.execute(
+        """
+        SELECT id, title, status, created_at
+        FROM complaints
+        WHERE status = 'Closed'
+        ORDER BY created_at DESC
+        """
+    ).fetchall()
+
     # Get notifications
     notifications = conn.execute(
         """
@@ -348,10 +428,71 @@ def student_dashboard():
     return render_template(
         "student_dashboard.html",
         complaints=complaints,
+        community_complaints=community_complaints,
+        closed_complaints=closed_complaints,
         notifications=notifications,
         total_complaints=total_complaints,
         resolved_complaints=resolved_complaints,
         pending_complaints=pending_complaints
+    )
+
+
+@app.route("/community-complaints")
+def community_complaints():
+
+    if session.get("user_type") != "student":
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+
+    complaints = conn.execute(
+        """
+        SELECT
+            c.id,
+            c.title,
+            c.description,
+            c.category,
+            c.status,
+            c.created_at,
+            (
+                SELECT COUNT(*)
+                FROM complaint_support cs
+                WHERE cs.complaint_id = c.id
+            ) AS support_count
+        FROM complaints c
+        WHERE c.status != 'Closed'
+        ORDER BY c.created_at DESC
+        """
+    ).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "community_complaints.html",
+        complaints=complaints
+    )
+
+
+@app.route("/closed-complaints")
+def closed_complaints():
+
+    if session.get("user_type") != "student":
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    complaints = conn.execute(
+        """
+        SELECT id, title, description, category, status, created_at
+        FROM complaints
+        WHERE status = 'Closed'
+        ORDER BY created_at DESC
+        """
+    ).fetchall()
+    conn.close()
+
+    return render_template(
+        "closed_complaints.html",
+        complaints=complaints
     )
 
 
@@ -585,22 +726,8 @@ def complaint_details(complaint_id):
 
         return redirect(url_for("student_dashboard"))
 
-    # Security:
-    # Student can only view their own complaint.
-    if session.get("user_type") == "student":
-
-        if complaint["student_id"] != session["user_id"]:
-
-            conn.close()
-
-            flash(
-                "You are not authorized to view this complaint.",
-                "error"
-            )
-
-            return redirect(
-                url_for("student_dashboard")
-            )
+    # Complaint details are visible to authenticated students so they
+    # can review and support complaints submitted by other students.
 
     # Support count
     support_count = conn.execute(
@@ -702,6 +829,22 @@ def support_complaint(complaint_id):
 
         return redirect(
             url_for("student_dashboard")
+        )
+
+    if complaint["status"] == "Closed":
+
+        conn.close()
+
+        flash(
+            "Closed complaints cannot receive support.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "complaint_details",
+                complaint_id=complaint_id
+            )
         )
 
     # Student cannot support own complaint
@@ -885,7 +1028,8 @@ def get_admin_analytics(conn):
 
 
 @app.route("/admin")
-def admin_dashboard():
+@app.route("/admin/complaints/<status_filter>")
+def admin_dashboard(status_filter=None):
 
     if session.get("user_type") != "admin":
 
@@ -894,7 +1038,7 @@ def admin_dashboard():
     conn = get_db_connection()
 
     # All complaints
-    complaints = conn.execute(
+    all_complaints = conn.execute(
         """
         SELECT
             c.*,
@@ -926,6 +1070,32 @@ def admin_dashboard():
         ORDER BY c.created_at DESC
         """
     ).fetchall()
+
+    status_pages = {
+        "all": None,
+        "new": ["New"],
+        "pending": ["Verified", "Assigned", "In Progress"],
+        "in-progress": ["In Progress"],
+        "resolved": ["Resolved", "Closed"],
+        "rejected": ["Rejected"]
+    }
+
+    if status_filter is None:
+        complaints = []
+    elif status_filter in status_pages:
+        allowed_page_statuses = status_pages[status_filter]
+        complaints = (
+            all_complaints
+            if allowed_page_statuses is None
+            else [
+                complaint
+                for complaint in all_complaints
+                if complaint["status"] in allowed_page_statuses
+            ]
+        )
+    else:
+        conn.close()
+        return redirect(url_for("admin_dashboard"))
 
     # Admin accounts
     admins = conn.execute(
@@ -968,7 +1138,15 @@ def admin_dashboard():
         """
     ).fetchone()[0]
 
-    pending = total - resolved
+    rejected = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM complaints
+        WHERE status = 'Rejected'
+        """
+    ).fetchone()[0]
+
+    pending = total - resolved - rejected
 
     conn.close()
 
@@ -980,6 +1158,7 @@ def admin_dashboard():
         new_count=new_count,
         in_progress=in_progress,
         resolved=resolved,
+        rejected=rejected,
         pending=pending
     )
 

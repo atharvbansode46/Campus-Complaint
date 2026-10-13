@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Closed Complaints | Campus Complaint System</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <h2>Campus Complaint</h2>
+    </div>
+    <div class="navbar-user">
+        <span>{{ session.get('user_name') }}</span>
+        <a href="{{ url_for('student_dashboard') }}"
+           class="secondary-btn">Dashboard</a>
+        <a href="{{ url_for('logout') }}"
+           class="logout-btn">Logout</a>
+    </div>
+</nav>
+
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <h1>Closed Complaints</h1>
+            <p>View complaints that have been closed. Closed complaints cannot receive support.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        {% if complaints %}
+            <div class="community-page-list">
+                {% for complaint in complaints %}
+                    <article class="community-page-item">
+                        <div class="complaint-card-header">
+                            <div>
+                                <span class="complaint-id">#{{ complaint['id'] }}</span>
+                                <h2>{{ complaint['title'] }}</h2>
+                            </div>
+                            <span class="status status-closed">Closed</span>
+                        </div>
+                        <p class="complaint-description">
+                            {{ complaint['description'][:180] }}
+                            {% if complaint['description']|length > 180 %}...{% endif %}
+                        </p>
+                        <div class="community-page-meta">
+                            <span>{{ complaint['category'] }}</span>
+                            <span>{{ complaint['created_at'] }}</span>
+                        </div>
+                        <a href="{{ url_for('complaint_details', complaint_id=complaint['id']) }}"
+                           class="secondary-btn">View Details</a>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No closed complaints</h3>
+                <p>Closed complaints will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
